@@ -152,17 +152,18 @@ function generateQuiz() {
     const teacherName = document.getElementById('teacherName').value || 'Ms. Thúy';
     const timeLimit = document.getElementById('timeLimit').value;
     
-    // Build matchingB (cột B) từ matching data
-    const matchingB = matching.map((item, idx) => ({
-        key: String.fromCharCode(65 + idx), // A, B, C...
-        text: item.b
-    }));
-    
-    // Gán đáp án matching theo key cột B
-    const matchingData = matching.map((item, idx) => {
-        const key = String.fromCharCode(65 + idx);
-        return { id: item.id, a: item.a, b: item.b, ans: key };
-    });
+  // Build matchingB (cột B) - XÁC TRỘN để học sinh không đoán được
+const shuffledB = [...matching].sort(() => Math.random() - 0.5);
+const matchingB = shuffledB.map((item, idx) => ({
+    key: String.fromCharCode(65 + idx), // A, B, C...
+    text: item.b
+}));
+
+// Gán đáp án matching theo key cột B (tìm đúng key của giá trị b trong cột B đã shuffle)
+const matchingData = matching.map((item) => {
+    const found = matchingB.find(b => b.text === item.b);
+    return { id: item.id, a: item.a, b: item.b, ans: found.key };
+});
     
     // Tính lại ID cho các phần (nối tiếp)
     let currentId = 1;
