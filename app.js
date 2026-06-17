@@ -524,19 +524,56 @@ function setActiveBlank(el) {
     activeFibBlank = el;
 }
 function selectFibWord(chip, word) {
-    if (chip.classList.contains('used')) return;
-    if (!activeFibBlank) {
-        const blanks = document.querySelectorAll('.blank:not(.filled)');
-        if (blanks.length > 0) { activeFibBlank = blanks[0]; activeFibBlank.classList.add('active'); }
-        else return;
+    // 1. Nếu click vào từ đang bị gạch (đã dùng) -> HỦY CHỌN (Undo)
+    if (chip.classList.contains('used')) {
+        const blanks = document.querySelectorAll('.blank');
+        blanks.forEach(blank => {
+            if (blank.dataset.val === word) {
+                blank.textContent = '';
+                blank.dataset.val = '';
+                blank.classList.remove('filled', 'active');
+            }
+        });
+        chip.classList.remove('used'); // Bỏ gạch ngang, cho phép chọn lại
+        activeFibBlank = null;
+        clearStatus(chip.closest('.quiz-section'));
+        return; // Kết thúc hàm
     }
-    activeFibBlank.textContent = word;
-    activeFibBlank.dataset.val = word;
-    activeFibBlank.classList.add('filled');
-    activeFibBlank.classList.remove('active');
+
+    // 2. Xác định ô trống đích đến
+    let targetBlank = activeFibBlank;
+    if (!targetBlank) {
+        const blanks = document.querySelectorAll('.blank:not(.filled)');
+        if (blanks.length > 0) {
+            targetBlank = blanks[0]; // Tự động chọn ô trống đầu tiên
+        } else {
+            return; // Hết chỗ trống
+        }
+    }
+
+    // 3. Nếu ô đích ĐÃ có từ khác, phải trả từ cũ về ngân hàng (bỏ gạch)
+    if (targetBlank.dataset.val) {
+        const oldWord = targetBlank.dataset.val;
+        const bankChips = document.querySelectorAll('#fib-bank .word-chip');
+        bankChips.forEach(c => {
+            if (c.textContent.trim() === oldWord && c.classList.contains('used')) {
+                c.classList.remove('used');
+            }
+        });
+    }
+
+    // 4. Điền từ mới vào ô
+    targetBlank.textContent = word;
+    targetBlank.dataset.val = word;
+    targetBlank.classList.add('filled');
+    targetBlank.classList.remove('active');
+
+    // 5. Đánh dấu từ mới là đã dùng
     chip.classList.add('used');
-    clearStatus(activeFibBlank.closest('.question-block'));
-    activeFibBlank = null;
+    activeFibBlank = null; // Reset để lần chọn sau linh hoạt hơn
+    
+    // Xóa trạng thái chấm điểm cũ để học sinh chấm lại
+    clearStatus(chip.closest('.quiz-section'));
 }
 function moveWord(chip, fromId, toId) {
     const to = document.getElementById(toId), from = document.getElementById(fromId);
