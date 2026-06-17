@@ -329,7 +329,7 @@ function buildQuizHTML(data) {
  // Timer HTML (nếu có thời gian)
 const timerHTML = timeLimit ? `
     <div class="score-item" style="background:#000;color:#fff;padding:5px 12px;border:2px solid #000;">
-        ⏱️ <span id="timer">00:00</span>
+        ⏰ <span id="timer">00:00</span>
     </div>` : '';
     
     return `<!DOCTYPE html>
