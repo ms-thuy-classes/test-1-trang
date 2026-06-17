@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Builder - Learn with Ms. Thúy</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="builder-header">
+        <div class="brand">🛠️ Quiz Builder</div>
+        <p class="subtitle">Công cụ tạo quiz tự động cho giáo viên</p>
+    </header>
+
+    <main class="builder-container">
+        
+        <!-- CẤU HÌNH CHUNG -->
+        <section class="config-section">
+            <h2>⚙️ Cấu hình chung</h2>
+            <div class="config-grid">
+                <div class="form-group">
+                    <label>Tiêu đề Quiz</label>
+                    <input type="text" id="quizTitle" value="Learn with Ms. Thúy - English Quiz" placeholder="Nhập tiêu đề...">
+                </div>
+                <div class="form-group">
+                    <label>Tên giáo viên (hiển thị)</label>
+                    <input type="text" id="teacherName" value="Ms. Thúy" placeholder="Tên GV...">
+                </div>
+                <div class="form-group">
+                    <label>Thời gian làm bài (phút) - để trống nếu không giới hạn</label>
+                    <input type="number" id="timeLimit" placeholder="VD: 45" min="1">
+                </div>
+            </div>
+        </section>
+
+        <!-- TABS CHỌN DẠNG BÀI -->
+        <nav class="tabs-nav">
+            <button class="tab-btn active" data-tab="matching">🔗 Matching</button>
+            <button class="tab-btn" data-tab="mcq">📝 Trắc nghiệm</button>
+            <button class="tab-btn" data-tab="fib">✍️ Fill-in</button>
+            <button class="tab-btn" data-tab="wordorder">🔀 Sắp xếp câu</button>
+            <button class="tab-btn" data-tab="para">🔄 Viết lại câu</button>
+            <button class="tab-btn" data-tab="scramble">🎲 Scramble</button>
+        </nav>
+
+        <!-- PANEL NHẬP LIỆU -->
+        <div class="tabs-content">
+
+            <!-- MATCHING -->
+            <div class="tab-panel active" id="tab-matching">
+                <h3>🔗 Phần Matching - Nối từ đồng nghĩa</h3>
+                <button class="btn-sample" onclick="toggleSample('sample-matching')">📖 Xem cấu trúc mẫu</button>
+                <div class="sample-box" id="sample-matching" style="display:none;">
+                    <strong>Cấu trúc:</strong> <code>Cột A | Cột B</code> (mỗi dòng 1 cặp, phân cách bởi dấu <code>|</code>)
+                    <pre>More and more | Increasingly
+Use | Employ
+Advertisements | Promotional campaigns
+Convince | Persuade
+Products | Goods and services</pre>
+                </div>
+                <textarea id="input-matching" rows="10" placeholder="Dán dữ liệu vào đây theo cấu trúc mẫu..."></textarea>
+                <div class="panel-actions">
+                    <button class="btn-clear" onclick="clearInput('input-matching')">🗑️ Xóa</button>
+                    <span class="status" id="status-matching"></span>
+                </div>
+            </div>
+
+            <!-- MCQ -->
+            <div class="tab-panel" id="tab-mcq">
+                <h3>📝 Phần Trắc nghiệm (Multiple Choice)</h3>
+                <button class="btn-sample" onclick="toggleSample('sample-mcq')">📖 Xem cấu trúc mẫu</button>
+                <div class="sample-box" id="sample-mcq" style="display:none;">
+                    <strong>Cấu trúc:</strong> Mỗi câu gồm 5 dòng (câu hỏi + 4 đáp án + dòng đáp án đúng)
+                    <pre>Over-purchasing often happens when buyers shop __________.
+A. carelessly
+B. impulsively
+C. frequently
+D. increasingly
+Answer: B
+
+To survive in a competitive market, a brand must focus on __________.
+A. awareness
+B. behavior
+C. loyalty
+D. gimmicks
+Answer: A</pre>
+                </div>
+                <textarea id="input-mcq" rows="12" placeholder="Dán dữ liệu vào đây..."></textarea>
+                <div class="panel-actions">
+                    <button class="btn-clear" onclick="clearInput('input-mcq')">🗑️ Xóa</button>
+                    <span class="status" id="status-mcq"></span>
+                </div>
+            </div>
+
+            <!-- FILL-IN -->
+            <div class="tab-panel" id="tab-fib">
+                <h3>✍️ Phần Fill-in-the-blanks (Điền từ)</h3>
+                <button class="btn-sample" onclick="toggleSample('sample-fib')">📖 Xem cấu trúc mẫu</button>
+                <div class="sample-box" id="sample-fib" style="display:none;">
+                    <strong>Cấu trúc:</strong> <code>Câu có chỗ trống (dùng ______________) | Đáp án</code>
+                    <pre>Advertisements are displayed everywhere, making them an unavoidable part of our ______________. | everyday life
+Companies launch major ______________ right before the Lunar New Year. | promotional campaigns
+Advertisements ______________ appear during prime-time TV. | frequently</pre>
+                </div>
+                <textarea id="input-fib" rows="10" placeholder="Dán dữ liệu vào đây..."></textarea>
+                <div class="panel-actions">
+                    <button class="btn-clear" onclick="clearInput('input-fib')">🗑️ Xóa</button>
+                    <span class="status" id="status-fib"></span>
+                </div>
+            </div>
+
+            <!-- WORD ORDER -->
+            <div class="tab-panel" id="tab-wordorder">
+                <h3>🔀 Phần Sắp xếp câu (Word Order)</h3>
+                <button class="btn-sample" onclick="toggleSample('sample-wordorder')">📖 Xem cấu trúc mẫu</button>
+                <div class="sample-box" id="sample-wordorder" style="display:none;">
+                    <strong>Cấu trúc:</strong> <code>Các từ xáo trộn (phân cách bằng /) | Câu đúng</code>
+                    <pre>common / increasingly / life / in / daily / Advertisements / becoming / are / . | Advertisements are becoming increasingly common in daily life.
+crucial / products / Advertising / promoting / is / for / . | Advertising is crucial for promoting products.</pre>
+                </div>
+                <textarea id="input-wordorder" rows="10" placeholder="Dán dữ liệu vào đây..."></textarea>
+                <div class="panel-actions">
+                    <button class="btn-clear" onclick="clearInput('input-wordorder')">🗑️ Xóa</button>
+                    <span class="status" id="status-wordorder"></span>
+                </div>
+            </div>
+
+            <!-- PARAPHRASING -->
+            <div class="tab-panel" id="tab-para">
+                <h3>🔄 Phần Viết lại câu (Paraphrasing)</h3>
+                <button class="btn-sample" onclick="toggleSample('sample-para')">📖 Xem cấu trúc mẫu</button>
+                <div class="sample-box" id="sample-para" style="display:none;">
+                    <strong>Cấu trúc:</strong> <code>Câu gốc (gợi ý) | Câu trả lời đúng</code>
+                    <pre>Advertisements are becoming more and more common in everyday life. (increasingly / daily) | Advertisements are becoming increasingly common in daily life.
+Advertising is important for promoting products. (crucial / goods and services) | Advertising is crucial for promoting goods and services.</pre>
+                </div>
+                <textarea id="input-para" rows="10" placeholder="Dán dữ liệu vào đây..."></textarea>
+                <div class="panel-actions">
+                    <button class="btn-clear" onclick="clearInput('input-para')">🗑️ Xóa</button>
+                    <span class="status" id="status-para"></span>
+                </div>
+            </div>
+
+            <!-- SCRAMBLE -->
+            <div class="tab-panel" id="tab-scramble">
+                <h3>🎲 Phần Scramble Words (Sắp xếp chữ cái)</h3>
+                <button class="btn-sample" onclick="toggleSample('sample-scramble')">📖 Xem cấu trúc mẫu</button>
+                <div class="sample-box" id="sample-scramble" style="display:none;">
+                    <strong>Cấu trúc:</strong> <code>TỪ_VỰNG | Gợi ý nghĩa tiếng Việt</code>
+                    <pre>ADVERTISING | Hoạt động quảng cáo
+CONSUMER | Người tiêu dùng
+PRODUCT | Sản phẩm
+KNOWLEDGE | Kiến thức
+BRAND | Thương hiệu</pre>
+                </div>
+                <textarea id="input-scramble" rows="10" placeholder="Dán dữ liệu vào đây..."></textarea>
+                <div class="panel-actions">
+                    <button class="btn-clear" onclick="clearInput('input-scramble')">🗑️ Xóa</button>
+                    <span class="status" id="status-scramble"></span>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- NÚT TẠO QUIZ -->
+        <div class="generate-section">
+            <button class="btn-generate" onclick="generateQuiz()">
+                🚀 TẠO QUIZ & DOWNLOAD FILE HTML
+            </button>
+            <div id="generate-status"></div>
+        </div>
+
+    </main>
+
+    <footer class="builder-footer">
+        <p>© Quiz Builder - Designed for Learn with Ms. Thúy</p>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>
