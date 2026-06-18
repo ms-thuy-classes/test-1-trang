@@ -1,5 +1,5 @@
 // ============================================================
-// QUIZ BUILDER - APP.JS
+// QUIZ BUILDER - APP.JS (FULL VERSION)
 // ============================================================
 
 // --- TAB SWITCHING ---
@@ -123,6 +123,7 @@ function parseScramble(text) {
     });
     return result;
 }
+
 function parseListening(text) {
     if (!text.trim()) return { audioUrl: '', sentences: [] };
     const lines = text.trim().split('\n').map(l => l.trim()).filter(l => l);
@@ -131,12 +132,9 @@ function parseListening(text) {
     const sentences = [];
     
     lines.forEach(line => {
-        // Dòng chứa link audio
         if (line.toLowerCase().startsWith('audio:')) {
             audioUrl = line.substring(6).trim();
-        } 
-        // Dòng chứa câu hỏi (có dấu |)
-        else if (line.includes('|')) {
+        } else if (line.includes('|')) {
             const [sentence, ans] = line.split('|').map(s => s.trim());
             if (sentence && ans) {
                 sentences.push({ text: sentence, ans });
@@ -165,8 +163,8 @@ function generateQuiz() {
     
     // Kiểm tra có ít nhất 1 dạng bài
     const totalQuestions = matching.length + mcq.length + fib.length + 
-                      wordOrder.length + para.length + scramble.length + 
-                      listening.sentences.length;
+                          wordOrder.length + para.length + scramble.length + 
+                          listening.sentences.length;
     
     if (totalQuestions === 0) {
         statusEl.innerHTML = '<span class="status-error">❌ Vui lòng nhập ít nhất 1 câu hỏi!</span>';
@@ -178,18 +176,18 @@ function generateQuiz() {
     const teacherName = document.getElementById('teacherName').value || 'Ms. Thúy';
     const timeLimit = document.getElementById('timeLimit').value;
     
-  // Build matchingB (cột B) - XÁC TRỘN để học sinh không đoán được
-const shuffledB = [...matching].sort(() => Math.random() - 0.5);
-const matchingB = shuffledB.map((item, idx) => ({
-    key: String.fromCharCode(65 + idx), // A, B, C...
-    text: item.b
-}));
-
-// Gán đáp án matching theo key cột B (tìm đúng key của giá trị b trong cột B đã shuffle)
-const matchingData = matching.map((item) => {
-    const found = matchingB.find(b => b.text === item.b);
-    return { id: item.id, a: item.a, b: item.b, ans: found.key };
-});
+    // Build matchingB (cột B) - XÁC RỘN để học sinh không đoán được
+    const shuffledB = [...matching].sort(() => Math.random() - 0.5);
+    const matchingB = shuffledB.map((item, idx) => ({
+        key: String.fromCharCode(65 + idx),
+        text: item.b
+    }));
+    
+    // Gán đáp án matching theo key cột B (tìm đúng key của giá trị b trong cột B đã shuffle)
+    const matchingData = matching.map((item) => {
+        const found = matchingB.find(b => b.text === item.b);
+        return { id: item.id, a: item.a, b: item.b, ans: found.key };
+    });
     
     // Tính lại ID cho các phần (nối tiếp)
     let currentId = 1;
@@ -208,7 +206,7 @@ const matchingData = matching.map((item) => {
         { name: 'wordorder', count: finalWordOrder.length, title: 'Word Order' },
         { name: 'para', count: finalPara.length, title: 'Paraphrasing' },
         { name: 'scramble', count: finalScramble.length, title: 'Scramble Words' },
-        { name: 'listening', count: listening.sentences.length, title: 'Listening' }  
+        { name: 'listening', count: listening.sentences.length, title: 'Listening' }
     ].filter(s => s.count > 0);
     
     // Generate HTML
@@ -221,7 +219,7 @@ const matchingData = matching.map((item) => {
         wordOrder: finalWordOrder,
         para: finalPara,
         scramble: finalScramble,
-         listening: listening,
+        listening: listening,
         sections,
         totalQuestions
     });
@@ -293,7 +291,7 @@ function buildQuizHTML(data) {
                 <h2 class="section-title">Phần ${sectionIndex}: Fill in the Blanks</h2>
                 <div class="section-score">Đúng: <span id="score${sectionIndex}">0</span>/${fib.length}</div>
             </div>
-            <p style="margin-bottom: 15px; font-weight: 600;">Chọn từ thích hợp từ danh sách để điền vào chỗ trống. <em>Nhấn vào chỗ trống, sau đó nhấn vào từ.</em></p>
+            <p style="margin-bottom: 15px; font-weight: 600;">Chọn từ thích hợp từ danh sách để điền vào chỗ trống. <em>Nhấn vào chỗ trống, sau đó nhấn vào từ. Nhấn lại từ đã chọn để hủy.</em></p>
             <div class="word-bank" id="fib-bank"></div>
             <div id="fib-container"></div>
             <div class="section-actions">
@@ -353,39 +351,39 @@ function buildQuizHTML(data) {
             </div>
         </section>`;
     }
+    
     if (listening.sentences.length > 0) {
-    sectionIndex++;
-    sectionsHTML += `
-    <section class="quiz-section" id="section${sectionIndex}">
-        <div class="section-header">
-            <h2 class="section-title">Phần ${sectionIndex}: Listening</h2>
-            <div class="section-score">Đúng: <span id="score${sectionIndex}">0</span>/${listening.sentences.length}</div>
-        </div>
-        <p style="margin-bottom: 20px; font-weight: 600;">Nghe file audio và điền từ thích hợp vào chỗ trống.</p>
-        
-        <div class="audio-player-wrapper">
-            <h3>🎧 BÀI NGHE</h3>
-            <audio controls id="listening-audio">
-                <source src="${listening.audioUrl}" type="audio/mpeg">
-                Trình duyệt của bạn không hỗ trợ phát audio.
-            </audio>
-        </div>
-        
-        <div id="listening-container"></div>
-        
-        <div class="section-actions">
-            <button class="btn btn-reset" onclick="resetSection(${sectionIndex})">Làm lại</button>
-            <button class="btn btn-check" onclick="checkSection(${sectionIndex})">Kiểm tra</button>
-        </div>
-    </section>`;
-}
+        sectionIndex++;
+        sectionsHTML += `
+        <section class="quiz-section" id="section${sectionIndex}">
+            <div class="section-header">
+                <h2 class="section-title">Phần ${sectionIndex}: Listening</h2>
+                <div class="section-score">Đúng: <span id="score${sectionIndex}">0</span>/${listening.sentences.length}</div>
+            </div>
+            <p style="margin-bottom: 20px; font-weight: 600;">Nghe file audio và điền từ thích hợp vào chỗ trống. <em>Nhấn vào ô trống để nhập từ.</em></p>
+            
+            <div class="audio-player-wrapper">
+                <h3>🎧 BÀI NGHE</h3>
+                <audio controls id="listening-audio">
+                    <source src="${listening.audioUrl}" type="audio/mpeg">
+                    Trình duyệt của bạn không hỗ trợ phát audio.
+                </audio>
+            </div>
+            
+            <div id="listening-container"></div>
+            
+            <div class="section-actions">
+                <button class="btn btn-reset" onclick="resetSection(${sectionIndex})">Làm lại</button>
+                <button class="btn btn-check" onclick="checkSection(${sectionIndex})">Kiểm tra</button>
+            </div>
+        </section>`;
+    }
     
     // Timer HTML (nếu có thời gian)
- // Timer HTML (nếu có thời gian)
-const timerHTML = timeLimit ? `
-    <div class="score-item" style="background:#000;color:#fff;padding:5px 12px;border:2px solid #000;">
-        ⏰ <span id="timer">00:00</span>
-    </div>` : '';
+    const timerHTML = timeLimit ? `
+        <div class="score-item" style="background:#000;color:#fff;padding:5px 12px;border:2px solid #000;">
+            ⏱️ <span id="timer">00:00</span>
+        </div>` : '';
     
     return `<!DOCTYPE html>
 <html lang="vi">
@@ -459,6 +457,13 @@ select.matching-select { width: 100%; padding: 10px; border: 2px solid #000; fon
 .column-b-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; }
 .column-b-item { padding: 12px 15px; background: #fff; border: 2px solid #000; font-weight: 600; }
 .matching-questions { display: flex; flex-direction: column; gap: 15px; }
+.audio-player-wrapper { background: linear-gradient(135deg, #c4b5fd 0%, #8ec5fc 100%); border: 3px solid #000; box-shadow: 4px 4px 0 #000; padding: 20px; margin-bottom: 25px; text-align: center; }
+.audio-player-wrapper h3 { margin-bottom: 12px; font-size: 1.1rem; color: #000; }
+.audio-player-wrapper audio { width: 100%; max-width: 500px; outline: none; }
+.listening-sentence { font-size: 1.05rem; line-height: 2; }
+.quiz-section.is-locked .question-block { pointer-events: none; opacity: 0.85; cursor: not-allowed; }
+.quiz-section.is-locked .question-block.is-correct,
+.quiz-section.is-locked .question-block.is-wrong { opacity: 1; }
 @media (max-width: 768px) {
     .sticky-header { flex-direction: column; align-items: stretch; }
     .score-board { justify-content: space-between; flex-wrap: wrap; }
@@ -509,7 +514,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (s.name === 'wordorder') renderWordOrder();
         if (s.name === 'para') renderParaphrasing();
         if (s.name === 'scramble') renderScramble();
-        if (s.name === 'listening') renderListening();  
+        if (s.name === 'listening') renderListening();
     });
     updateTotalScore();
     ${timeLimit ? `startTimer(${timeLimit});` : ''}
@@ -571,37 +576,24 @@ function renderScramble() {
         return '<div class="question-block" data-id="' + item.id + '" data-ans="' + item.word + '"><div class="q-text">' + item.id + '. ' + item.hint + '</div><div class="word-order-controls"><button class="btn btn-undo" onclick="undoScramble(' + item.id + ')">↩ Undo</button><button class="btn btn-clear" onclick="clearScramble(' + item.id + ')">✕ Xóa hết</button></div><div class="word-order-area" id="scramble-answer-' + item.id + '" style="min-height:50px;justify-content:center;font-size:1.2rem;letter-spacing:2px;"></div><div class="word-bank" id="scramble-bank-' + item.id + '" style="justify-content:center;">' + chars.map(c => '<div class="word-chip" onclick="moveScrambleChar(this, \\'scramble-bank-' + item.id + '\\', \\'scramble-answer-' + item.id + '\\')">' + c + '</div>').join('') + '</div></div>';
     }).join('');
 }
+
 function renderListening() {
     const container = document.getElementById('listening-container');
-
-    container.innerHTML = listeningData.map((item, index) => {
-        const sentence = item.text.replace(
-            /_+/,
-            `<span class="listening-blank blank" data-val=""></span>`
-        );
-
-        return `
-        <div class="question-block"
-             data-id="${index + 1}"
-             data-ans="${item.ans.toLowerCase().trim()}">
-            <div class="q-text">
-                ${index + 1}. ${sentence}
-            </div>
-        </div>`;
+    container.innerHTML = listeningData.map((item, idx) => {
+        const sentenceWithBlank = item.text.replace(/_+/, '<span class="blank listening-blank" data-val=""></span>');
+        return '<div class="question-block" data-id="' + (idx + 1) + '" data-ans="' + item.ans.toLowerCase().trim() + '"><div class="q-text listening-sentence">' + (idx + 1) + '. ' + sentenceWithBlank + '</div></div>';
     }).join('');
 }
-function setActiveListeningBlank(el) {
-    document.querySelectorAll('.listening-blank').forEach(b => b.classList.remove('active'));
-    el.classList.add('active');
-    window.activeListeningBlank = el;
-}
+
 // === INTERACTION ===
-function clearStatus(block) { block.classList.remove('is-correct', 'is-wrong'); }
+function clearStatus(block) { if (block) block.classList.remove('is-correct', 'is-wrong'); }
+
 function setActiveBlank(el) {
     document.querySelectorAll('.blank').forEach(b => b.classList.remove('active'));
     el.classList.add('active');
     activeFibBlank = el;
 }
+
 function selectFibWord(chip, word) {
     // 1. Nếu click vào từ đang bị gạch (đã dùng) -> HỦY CHỌN (Undo)
     if (chip.classList.contains('used')) {
@@ -613,10 +605,10 @@ function selectFibWord(chip, word) {
                 blank.classList.remove('filled', 'active');
             }
         });
-        chip.classList.remove('used'); // Bỏ gạch ngang, cho phép chọn lại
+        chip.classList.remove('used');
         activeFibBlank = null;
-        clearStatus(chip.closest('.quiz-section'));
-        return; // Kết thúc hàm
+        clearStatus(chip.closest('.question-block'));
+        return;
     }
 
     // 2. Xác định ô trống đích đến
@@ -624,13 +616,13 @@ function selectFibWord(chip, word) {
     if (!targetBlank) {
         const blanks = document.querySelectorAll('.blank:not(.filled)');
         if (blanks.length > 0) {
-            targetBlank = blanks[0]; // Tự động chọn ô trống đầu tiên
+            targetBlank = blanks[0];
         } else {
-            return; // Hết chỗ trống
+            return;
         }
     }
 
-    // 3. Nếu ô đích ĐÃ có từ khác, phải trả từ cũ về ngân hàng (bỏ gạch)
+    // 3. Nếu ô đích ĐÃ có từ khác, phải trả từ cũ về ngân hàng
     if (targetBlank.dataset.val) {
         const oldWord = targetBlank.dataset.val;
         const bankChips = document.querySelectorAll('#fib-bank .word-chip');
@@ -649,41 +641,67 @@ function selectFibWord(chip, word) {
 
     // 5. Đánh dấu từ mới là đã dùng
     chip.classList.add('used');
-    activeFibBlank = null; // Reset để lần chọn sau linh hoạt hơn
+    activeFibBlank = null;
     
-    // Xóa trạng thái chấm điểm cũ để học sinh chấm lại
-    clearStatus(chip.closest('.quiz-section'));
+    clearStatus(chip.closest('.question-block'));
 }
+
 function moveWord(chip, fromId, toId) {
     const to = document.getElementById(toId), from = document.getElementById(fromId);
     if (chip.parentElement.id === fromId) to.appendChild(chip); else from.appendChild(chip);
     clearStatus(chip.closest('.question-block'));
 }
+
 function undoWord(id) {
     const ans = document.getElementById('answer-' + id), bank = document.getElementById('bank-' + id);
     const chips = ans.querySelectorAll('.word-chip');
     if (chips.length > 0) { bank.appendChild(chips[chips.length - 1]); clearStatus(ans.closest('.question-block')); }
 }
+
 function clearWord(id) {
     const ans = document.getElementById('answer-' + id), bank = document.getElementById('bank-' + id);
     ans.querySelectorAll('.word-chip').forEach(c => bank.appendChild(c));
     clearStatus(ans.closest('.question-block'));
 }
+
 function moveScrambleChar(chip, fromId, toId) {
     const to = document.getElementById(toId), from = document.getElementById(fromId);
     if (chip.parentElement.id === fromId) to.appendChild(chip); else from.appendChild(chip);
     clearStatus(chip.closest('.question-block'));
 }
+
 function undoScramble(id) {
     const ans = document.getElementById('scramble-answer-' + id), bank = document.getElementById('scramble-bank-' + id);
     const chips = ans.querySelectorAll('.word-chip');
     if (chips.length > 0) { bank.appendChild(chips[chips.length - 1]); clearStatus(ans.closest('.question-block')); }
 }
+
 function clearScramble(id) {
     const ans = document.getElementById('scramble-answer-' + id), bank = document.getElementById('scramble-bank-' + id);
     ans.querySelectorAll('.word-chip').forEach(c => bank.appendChild(c));
     clearStatus(ans.closest('.question-block'));
 }
+
+// Listening: click vào ô trống để nhập từ
+document.addEventListener('click', (e) => {
+    if (e.target.classList.contains('listening-blank')) {
+        const blank = e.target;
+        const section = blank.closest('.quiz-section');
+        if (section && section.classList.contains('is-locked')) return;
+        const currentVal = blank.dataset.val || '';
+        const input = prompt('Nhập từ cần điền:', currentVal);
+        if (input !== null) {
+            blank.textContent = input.trim();
+            blank.dataset.val = input.trim();
+            if (input.trim()) {
+                blank.classList.add('filled');
+            } else {
+                blank.classList.remove('filled');
+            }
+            clearStatus(blank.closest('.question-block'));
+        }
+    }
+});
 
 // === GRADING ===
 function normalizeText(t) { return t.toLowerCase().replace(/[.,\\/#!$%^&*;:{}=\\-_\\\`~()]/g, '').replace(/\\s{2,}/g, ' ').trim(); }
@@ -716,20 +734,23 @@ function checkSection(num) {
             const area = block.querySelector('#scramble-answer-' + block.dataset.id);
             userAns = Array.from(area.querySelectorAll('.word-chip')).map(c => c.textContent).join('');
             isCorrect = userAns === ans.toUpperCase();
+        } else if (sectionInfo.name === 'listening') {
+            const blank = block.querySelector('.listening-blank');
+            if (blank) {
+                userAns = blank.dataset.val.toLowerCase().trim();
+                isCorrect = userAns === ans;
+            }
         }
-        else if (sectionInfo.name === 'listening') {
-    const blank = block.querySelector('.listening-blank');
-    if (blank) {
-        userAns = blank.dataset.val.toLowerCase().trim();
-        isCorrect = userAns === ans;
-    }
-}
         if (isCorrect) { block.classList.add('is-correct'); block.classList.remove('is-wrong'); correct++; }
         else { block.classList.add('is-wrong'); block.classList.remove('is-correct'); }
     });
     scores[num] = correct;
     document.getElementById('score' + num).textContent = correct;
     updateTotalScore();
+    
+    // KHÓA BÀI TẬP SAU KHI KIỂM TRA
+    const section = document.getElementById('section' + num);
+    section.classList.add('is-locked');
 }
 
 function resetSection(num) {
@@ -749,16 +770,19 @@ function resetSection(num) {
         else if (sectionInfo.name === 'para') block.querySelector('.para-input').value = '';
         else if (sectionInfo.name === 'scramble') clearScramble(block.dataset.id);
         else if (sectionInfo.name === 'listening') {
-    const blank = block.querySelector('.listening-blank');
-    if (blank) {
-        blank.textContent = '';
-        blank.dataset.val = '';
-        blank.classList.remove('filled', 'active');
-    }
-}
-        
+            const blank = block.querySelector('.listening-blank');
+            if (blank) {
+                blank.textContent = '';
+                blank.dataset.val = '';
+                blank.classList.remove('filled', 'active');
+            }
+        }
     });
     if (sectionInfo.name === 'fib') document.querySelectorAll('#fib-bank .word-chip').forEach(c => c.classList.remove('used'));
+    
+    // MỞ KHÓA LẠI
+    section.classList.remove('is-locked');
+    
     updateTotalScore();
 }
 
@@ -785,24 +809,6 @@ function startTimer(minutes) {
         seconds--;
     }, 1000);
 }` : ''}
-// Cho phép gõ trực tiếp vào ô trống của phần Listening
-document.addEventListener('click', (e) => {
-    if (e.target.classList.contains('listening-blank')) {
-        const blank = e.target;
-        const currentVal = blank.dataset.val || '';
-        const input = prompt('Nhập từ cần điền:', currentVal);
-        if (input !== null) {
-            blank.textContent = input.trim();
-            blank.dataset.val = input.trim();
-            if (input.trim()) {
-                blank.classList.add('filled');
-            } else {
-                blank.classList.remove('filled');
-            }
-            clearStatus(blank.closest('.question-block'));
-        }
-    }
-});
 <\/script>
 </body>
 </html>`;
