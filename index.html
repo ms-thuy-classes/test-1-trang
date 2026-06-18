@@ -42,6 +42,7 @@
             <button class="tab-btn" data-tab="wordorder">🔀 Sắp xếp câu</button>
             <button class="tab-btn" data-tab="para">🔄 Viết lại câu</button>
             <button class="tab-btn" data-tab="scramble">🎲 Scramble</button>
+            <button class="tab-btn" data-tab="listening">🎧 Listening</button>
         </nav>
 
         <!-- PANEL NHẬP LIỆU -->
@@ -160,6 +161,25 @@ BRAND | Thương hiệu</pre>
                     <span class="status" id="status-scramble"></span>
                 </div>
             </div>
+            <!-- LISTENING -->
+<div class="tab-panel" id="tab-listening">
+    <h3>🎧 Phần Listening - Fill in the Gap</h3>
+    <button class="btn-sample" onclick="toggleSample('sample-listening')">📖 Xem cấu trúc mẫu</button>
+    <div class="sample-box" id="sample-listening" style="display:none;">
+        <strong>Cấu trúc:</strong> Dòng đầu là link file nghe, các dòng sau là câu có chỗ trống <code>___</code> và đáp án.
+        <pre>Audio: https://raw.githubusercontent.com/username/repo/main/audio.mp3
+The capital of France is ______________. | Paris
+She usually goes to ______________ by bus. | school
+I have two ______________ and one sister. | brothers
+We need to buy some ______________ for dinner. | vegetables</pre>
+        <strong>💡 Mẹo:</strong> Upload file mp3 lên GitHub, lấy link raw (nhấn nút Raw → copy URL).
+    </div>
+    <textarea id="input-listening" rows="10" placeholder="Dán dữ liệu vào đây..."></textarea>
+    <div class="panel-actions">
+        <button class="btn-clear" onclick="clearInput('input-listening')">🗑️ Xóa</button>
+        <span class="status" id="status-listening"></span>
+    </div>
+</div>
 
         </div>
 
