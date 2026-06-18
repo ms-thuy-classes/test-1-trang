@@ -809,6 +809,106 @@ function startTimer(minutes) {
         seconds--;
     }, 1000);
 }` : ''}
+// ============================================================
+// QUICK EXAMPLES FUNCTIONALITY
+// ============================================================
+
+function toggleExamples() {
+    const content = document.getElementById('examples-content');
+    const icon = document.getElementById('toggle-icon');
+    const btn = document.querySelector('.btn-toggle-examples');
+    
+    if (content.classList.contains('collapsed')) {
+        content.classList.remove('collapsed');
+        icon.textContent = '▼';
+        btn.innerHTML = '<span id="toggle-icon">▼</span> Thu hẹp';
+    } else {
+        content.classList.add('collapsed');
+        icon.textContent = '▶';
+        btn.innerHTML = '<span id="toggle-icon">▶</span> Mở rộng';
+    }
+}
+
+function addQuickExample(type) {
+    const examples = {
+        matching: `More and more | Increasingly
+Use | Employ
+Advertisements | Promotional campaigns
+Convince | Persuade
+Products | Goods and services`,
+        
+        mcq: `What is the capital of France?
+A. London
+B. Paris
+C. Berlin
+D. Madrid
+Answer: B
+
+Which planet is known as the Red Planet?
+A. Venus
+B. Jupiter
+C. Mars
+D. Saturn
+Answer: C
+
+What is 2 + 2?
+A. 3
+B. 4
+C. 5
+D. 6
+Answer: B`,
+        
+        fib: `The capital of France is ______________. | Paris
+She usually goes to ______________ by bus. | school
+I have two ______________ and one sister. | brothers
+We need to buy some ______________ for dinner. | vegetables
+My favorite ______________ is Mathematics. | subject`,
+        
+        wordorder: `is / capital / Paris / France / the / of / . | The capital of France is Paris.
+go / I / school / to / daily / . | I go to school daily.
+like / She / to / read / books / . | She likes to read books.
+playing / They / are / football / . | They are playing football.
+have / We / meeting / a / tomorrow / . | We have a meeting tomorrow.`,
+        
+        para: `She is very beautiful. (extremely) | She is extremely beautiful.
+He runs fast. (quickly) | He runs quickly.
+The movie was interesting. (quite) | The movie was quite interesting.
+They arrived early. (on time) | They arrived on time.
+The food tastes good. (delicious) | The food tastes delicious.`,
+        
+        scramble: `SCHOOL | Trường học
+TEACHER | Giáo viên
+STUDENT | Học sinh
+BOOK | Sách
+COMPUTER | Máy tính`,
+        
+        listening: `Audio: https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3
+The capital of France is ______________. | Paris
+She usually goes to ______________ by bus. | school
+I have two ______________ and one sister. | brothers
+We need to buy some ______________ for dinner. | vegetables`
+    };
+    
+    const textarea = document.getElementById('input-' + type);
+    if (textarea) {
+        textarea.value = examples[type];
+        
+        // Chuyển sang tab tương ứng
+        const tabBtn = document.querySelector(`.tab-btn[data-tab="${type}"]`);
+        if (tabBtn) {
+            tabBtn.click();
+        }
+        
+        // Hiển thị thông báo
+        const statusEl = document.getElementById('status-' + type);
+        if (statusEl) {
+            statusEl.textContent = '✅ Đã thêm 3 ví dụ mẫu!';
+            setTimeout(() => {
+                statusEl.textContent = '';
+            }, 3000);
+        }
+    }
+}
 <\/script>
 </body>
 </html>`;
