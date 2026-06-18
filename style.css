@@ -327,9 +327,19 @@ textarea:focus {
 
 /* RESPONSIVE */
 @media (max-width: 768px) {
+     .tab-btn { 
+        flex: 1 1 100%;  /* Mỗi tab chiếm 1 dòng */
+        min-width: 100%;
+    }
     .brand { font-size: 1.5rem; }
     .tab-btn { min-width: 100%; }
     .btn-generate { font-size: 1rem; padding: 14px 24px; }
+}
+@media (min-width: 1024px) {
+    .tab-btn {
+        min-width: 160px;
+        font-size: 1rem;
+    }
 }
 /* === LISTENING === */
 .audio-player-wrapper {
