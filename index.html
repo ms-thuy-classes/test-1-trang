@@ -33,118 +33,59 @@
                 </div>
             </div>
         </section>
-<!-- BẢNG COPY-PASTE NHANH -->
-<section class="quick-examples-section">
-    <div class="quick-examples-header">
-        <h2>⚡ BẢNG COPY-PASTE NHANH</h2>
-        <button class="btn-toggle-examples" onclick="toggleExamples()">
-            <span id="toggle-icon">▼</span> Thu hẹp
+<!-- Ô COPY-PASTE TỔNG HỢP -->
+<section class="bulk-paste-section">
+    <div class="bulk-paste-header">
+        <h2>📋 DÁN TẤT CẢ BÀI TẬP VÀO ĐÂY</h2>
+        <button class="btn-toggle-bulk" onclick="toggleBulk()">
+            <span id="bulk-icon">▼</span> Thu hẹp
         </button>
     </div>
-    
-    <div class="examples-content" id="examples-content">
-        <p style="margin-bottom: 15px; font-weight: 600; color: #555;">
-            💡 Nhấn nút <strong>"Thêm nhanh"</strong> để tự động điền 3 ví dụ mẫu vào ô nhập liệu tương ứng.
+    <div class="bulk-content" id="bulk-content">
+        <p style="margin-bottom: 10px; font-weight: 600; color: #059669;">
+            ✅ Copy toàn bộ đề bài từ Word/Excel, dán vào ô dưới, nhấn <strong>"THÊM TẤT CẢ"</strong> → tự động phân vào các tab!
         </p>
-        
-        <div class="examples-grid">
-            
-            <!-- MATCHING -->
-            <div class="example-card">
-                <h4>🔗 Matching (Nối từ)</h4>
-                <div class="example-preview">
-                    <code>More and more | Increasingly</code><br>
-                    <code>Use | Employ</code><br>
-                    <code>Advertisements | Promotional campaigns</code>
-                </div>
-                <button class="btn-add-quick" onclick="addQuickExample('matching')">
-                    ⚡ Thêm nhanh
-                </button>
-            </div>
-            
-            <!-- MCQ -->
-            <div class="example-card">
-                <h4>📝 Trắc nghiệm</h4>
-                <div class="example-preview">
-                    <code>Question 1?</code><br>
-                    <code>A. option1</code><br>
-                    <code>B. option2</code><br>
-                    <code>C. option3</code><br>
-                    <code>D. option4</code><br>
-                    <code>Answer: B</code>
-                </div>
-                <button class="btn-add-quick" onclick="addQuickExample('mcq')">
-                    ⚡ Thêm nhanh
-                </button>
-            </div>
-            
-            <!-- FILL-IN -->
-            <div class="example-card">
-                <h4>✍️ Fill-in</h4>
-                <div class="example-preview">
-                    <code>Sentence with ___ | answer1</code><br>
-                    <code>Another ___ sentence | answer2</code><br>
-                    <code>Third ___ example | answer3</code>
-                </div>
-                <button class="btn-add-quick" onclick="addQuickExample('fib')">
-                    ⚡ Thêm nhanh
-                </button>
-            </div>
-            
-            <!-- WORD ORDER -->
-            <div class="example-card">
-                <h4>🔀 Sắp xếp câu</h4>
-                <div class="example-preview">
-                    <code>word1 / word2 / word3 / word4 | Full sentence.</code><br>
-                    <code>is / capital / Paris / France / the / of | The capital of France is Paris.</code><br>
-                    <code>go / I / school / to / daily | I go to school daily.</code>
-                </div>
-                <button class="btn-add-quick" onclick="addQuickExample('wordorder')">
-                    ⚡ Thêm nhanh
-                </button>
-            </div>
-            
-            <!-- PARAPHRASING -->
-            <div class="example-card">
-                <h4>🔄 Viết lại câu</h4>
-                <div class="example-preview">
-                    <code>Original sentence. (hint) | Rewritten sentence.</code><br>
-                    <code>She is very beautiful. (extremely) | She is extremely beautiful.</code><br>
-                    <code>He runs fast. (quickly) | He runs quickly.</code>
-                </div>
-                <button class="btn-add-quick" onclick="addQuickExample('para')">
-                    ⚡ Thêm nhanh
-                </button>
-            </div>
-            
-            <!-- SCRAMBLE -->
-            <div class="example-card">
-                <h4>🎲 Scramble</h4>
-                <div class="example-preview">
-                    <code>WORD | Hint in Vietnamese</code><br>
-                    <code>SCHOOL | Trường học</code><br>
-                    <code>TEACHER | Giáo viên</code><br>
-                    <code>STUDENT | Học sinh</code>
-                </div>
-                <button class="btn-add-quick" onclick="addQuickExample('scramble')">
-                    ⚡ Thêm nhanh
-                </button>
-            </div>
-            
-            <!-- LISTENING -->
-            <div class="example-card">
-                <h4>🎧 Listening</h4>
-                <div class="example-preview">
-                    <code>Audio: https://example.com/audio.mp3</code><br>
-                    <code>Sentence with ___ | answer</code><br>
-                    <code>Another ___ sentence | answer2</code><br>
-                    <code>Third ___ example | answer3</code>
-                </div>
-                <button class="btn-add-quick" onclick="addQuickExample('listening')">
-                    ⚡ Thêm nhanh
-                </button>
-            </div>
-            
+        <button class="btn-sample" onclick="toggleSample('sample-bulk')">📖 Xem cấu trúc mẫu tổng hợp</button>
+        <div class="sample-box" id="sample-bulk" style="display:none;">
+            <strong>Cấu trúc:</strong> Dùng <code>===TÊN PHẦN===</code> để phân cách các dạng bài
+            <pre>===MATCHING===
+More and more | Increasingly
+Use | Employ
+
+===MCQ===
+What is the capital of France?
+A. London
+B. Paris
+C. Berlin
+D. Madrid
+Answer: B
+
+===FIB===
+The capital of France is ______________. | Paris
+She goes to ______________ by bus. | school
+
+===WORDORDER===
+is / capital / Paris / . | The capital is Paris.
+
+===PARA===
+She is beautiful. (extremely) | She is extremely beautiful.
+
+===SCRAMBLE===
+SCHOOL | Trường học
+TEACHER | Giáo viên
+
+===LISTENING===
+Audio: https://example.com/audio.mp3
+Today, I ____ (1) to the market. My friend ____ (2) with me.
+---
+1 | went
+2 | came</pre>
+        </div>
+        <textarea id="bulk-input" rows="12" placeholder="Dán TOÀN BỘ đề bài vào đây theo cấu trúc mẫu..."></textarea>
+        <div class="bulk-actions">
+            <button class="btn-add-all" onclick="addAllFromBulk()">⚡ THÊM TẤT CẢ VÀO CÁC TAB</button>
+            <button class="btn-clear" onclick="clearInput('bulk-input')">🗑️ Xóa</button>
+            <span class="status" id="bulk-status"></span>
         </div>
     </div>
 </section>
