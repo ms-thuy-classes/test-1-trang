@@ -1,5 +1,5 @@
 // ============================================================
-// QUIZ BUILDER - APP.JS (FULL VERSION)
+// QUIZ BUILDER - APP.JS (FULL VERSION - FIXED)
 // ============================================================
 
 // --- TAB SWITCHING ---
@@ -24,7 +24,7 @@ function clearInput(id) {
 }
 
 // ============================================================
-// PARSERS - Chuyển text GV nhập thành JS object
+// PARSERS
 // ============================================================
 
 function parseMatching(text) {
@@ -43,27 +43,19 @@ function parseMCQ(text) {
     const blocks = text.trim().split(/\n\s*\n/);
     const result = [];
     let idCounter = 1;
-    
     blocks.forEach(block => {
         const lines = block.trim().split('\n').map(l => l.trim()).filter(l => l);
         if (lines.length < 6) return;
-        
         const question = lines[0];
         const options = {};
         let answer = '';
-        
         for (let i = 1; i < lines.length; i++) {
             const line = lines[i];
             const optMatch = line.match(/^([A-D])\.\s*(.+)$/i);
-            if (optMatch) {
-                options[optMatch[1].toUpperCase()] = optMatch[2].trim();
-            }
+            if (optMatch) options[optMatch[1].toUpperCase()] = optMatch[2].trim();
             const ansMatch = line.match(/^Answer:\s*([A-D])$/i);
-            if (ansMatch) {
-                answer = ansMatch[1].toUpperCase();
-            }
+            if (ansMatch) answer = ansMatch[1].toUpperCase();
         }
-        
         if (question && Object.keys(options).length === 4 && answer) {
             result.push({ id: idCounter++, q: question, options, ans: answer });
         }
@@ -77,9 +69,7 @@ function parseFIB(text) {
     const result = [];
     lines.forEach((line, idx) => {
         const [sentence, ans] = line.split('|').map(s => s.trim());
-        if (sentence && ans) {
-            result.push({ id: idx + 1, text: sentence, ans });
-        }
+        if (sentence && ans) result.push({ id: idx + 1, text: sentence, ans });
     });
     return result;
 }
@@ -104,9 +94,7 @@ function parsePara(text) {
     const result = [];
     lines.forEach((line, idx) => {
         const [q, ans] = line.split('|').map(s => s.trim());
-        if (q && ans) {
-            result.push({ id: idx + 1, q, ans });
-        }
+        if (q && ans) result.push({ id: idx + 1, q, ans });
     });
     return result;
 }
@@ -117,42 +105,169 @@ function parseScramble(text) {
     const result = [];
     lines.forEach((line, idx) => {
         const [word, hint] = line.split('|').map(s => s.trim());
-        if (word && hint) {
-            result.push({ id: idx + 1, word: word.toUpperCase(), hint });
-        }
+        if (word && hint) result.push({ id: idx + 1, word: word.toUpperCase(), hint });
     });
     return result;
 }
 
+// === PARSER LISTENING MỚI - Hỗ trợ đoạn văn dài với (1), (2)... ===
 function parseListening(text) {
-    if (!text.trim()) return { audioUrl: '', sentences: [] };
-    const lines = text.trim().split('\n').map(l => l.trim()).filter(l => l);
+    if (!text.trim()) return { audioUrl: '', passage: '', sentences: [] };
     
     let audioUrl = '';
-    const sentences = [];
+    let passageLines = [];
+    const answers = {};
     
-    lines.forEach(line => {
-        if (line.toLowerCase().startsWith('audio:')) {
-            audioUrl = line.substring(6).trim();
-        } else if (line.includes('|')) {
-            const [sentence, ans] = line.split('|').map(s => s.trim());
-            if (sentence && ans) {
-                sentences.push({ text: sentence, ans });
-            }
+    const lines = text.trim().split('\n');
+    let mode = 'passage'; // 'passage' hoặc 'answers'
+    
+    for (let line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed) continue;
+        
+        // Dòng audio
+        if (trimmed.toLowerCase().startsWith('audio:')) {
+            audioUrl = trimmed.substring(6).trim();
+            continue;
+        }
+        
+        // Dấu phân cách
+        if (trimmed === '---' || trimmed.toLowerCase() === '[answers]' || trimmed.toLowerCase() === '===answers===') {
+            mode = 'answers';
+            continue;
+        }
+        
+        if (trimmed.toLowerCase() === '[passage]' || trimmed.toLowerCase() === '===passage===') {
+            mode = 'passage';
+            continue;
+        }
+        
+        if (mode === 'answers' && trimmed.includes('|')) {
+            const parts = trimmed.split('|').map(s => s.trim());
+            const num = parts[0].replace(/\D/g, ''); // Chỉ lấy số
+            const ans = parts[1];
+            if (num && ans) answers[num] = ans;
+        } else if (mode === 'passage') {
+            passageLines.push(trimmed);
+        }
+    }
+    
+    const passage = passageLines.join('\n');
+    
+    // Tìm tất cả các ____ (N) trong passage
+    const regex = /_+\s*\((\d+)\)/g;
+    const foundNums = new Set();
+    let match;
+    while ((match = regex.exec(passage)) !== null) {
+        foundNums.add(match[1]);
+    }
+    
+    // Tạo câu hỏi theo thứ tự số
+    const sentences = [];
+    const sortedNums = Array.from(foundNums).sort((a, b) => parseInt(a) - parseInt(b));
+    
+    sortedNums.forEach(num => {
+        if (answers[num]) {
+            sentences.push({
+                num: num,
+                ans: answers[num]
+            });
         }
     });
     
-    return { audioUrl, sentences };
+    return { audioUrl, passage, sentences };
 }
 
 // ============================================================
-// GENERATE QUIZ HTML
+// BULK PASTE - Parse tất cả từ 1 ô lớn
+// ============================================================
+
+function addAllFromBulk() {
+    const bulkText = document.getElementById('bulk-input').value;
+    if (!bulkText.trim()) {
+        document.getElementById('bulk-status').innerHTML = '<span class="status-error">❌ Ô trống!</span>';
+        return;
+    }
+    
+    // Tách theo delimiter ===NAME===
+    const sections = {
+        matching: '',
+        mcq: '',
+        fib: '',
+        wordorder: '',
+        para: '',
+        scramble: '',
+        listening: ''
+    };
+    
+    const sectionNames = ['matching', 'mcq', 'fib', 'wordorder', 'para', 'scramble', 'listening'];
+    
+    // Regex tìm ===NAME===
+    const delimiterRegex = /===\s*(MATCHING|MCQ|FIB|WORDORDER|PARA|SCRAMBLE|LISTENING)\s*===/gi;
+    
+    const parts = bulkText.split(delimiterRegex);
+    
+    // parts sẽ có dạng: [trước_delim_1, NAME_1, nội_dung_1, NAME_2, nội_dung_2, ...]
+    for (let i = 1; i < parts.length; i += 2) {
+        const name = parts[i].toLowerCase();
+        const content = parts[i + 1] ? parts[i + 1].trim() : '';
+        if (sections.hasOwnProperty(name)) {
+            sections[name] = content;
+        }
+    }
+    
+    // Đổ vào từng textarea
+    let count = 0;
+    const mapping = {
+        matching: 'input-matching',
+        mcq: 'input-mcq',
+        fib: 'input-fib',
+        wordorder: 'input-wordorder',
+        para: 'input-para',
+        scramble: 'input-scramble',
+        listening: 'input-listening'
+    };
+    
+    for (const [key, textareaId] of Object.entries(mapping)) {
+        if (sections[key]) {
+            document.getElementById(textareaId).value = sections[key];
+            count++;
+        }
+    }
+    
+    const statusEl = document.getElementById('bulk-status');
+    if (count > 0) {
+        statusEl.innerHTML = `<span class="status-success">✅ Đã phân vào ${count} tab thành công!</span>`;
+    } else {
+        statusEl.innerHTML = '<span class="status-error">❌ Không tìm thấy delimiter ===NAME===. Xem mẫu để biết cách nhập.</span>';
+    }
+    
+    setTimeout(() => { statusEl.textContent = ''; }, 4000);
+}
+
+function toggleBulk() {
+    const content = document.getElementById('bulk-content');
+    const icon = document.getElementById('bulk-icon');
+    const btn = document.querySelector('.btn-toggle-bulk');
+    
+    if (content.classList.contains('collapsed')) {
+        content.classList.remove('collapsed');
+        icon.textContent = '▼';
+        btn.innerHTML = '<span id="bulk-icon">▼</span> Thu hẹp';
+    } else {
+        content.classList.add('collapsed');
+        icon.textContent = '▶';
+        btn.innerHTML = '<span id="bulk-icon">▶</span> Mở rộng';
+    }
+}
+
+// ============================================================
+// GENERATE QUIZ
 // ============================================================
 
 function generateQuiz() {
     const statusEl = document.getElementById('generate-status');
     
-    // Lấy dữ liệu từ các input
     const matching = parseMatching(document.getElementById('input-matching').value);
     const mcq = parseMCQ(document.getElementById('input-mcq').value);
     const fib = parseFIB(document.getElementById('input-fib').value);
@@ -161,7 +276,6 @@ function generateQuiz() {
     const scramble = parseScramble(document.getElementById('input-scramble').value);
     const listening = parseListening(document.getElementById('input-listening').value);
     
-    // Kiểm tra có ít nhất 1 dạng bài
     const totalQuestions = matching.length + mcq.length + fib.length + 
                           wordOrder.length + para.length + scramble.length + 
                           listening.sentences.length;
@@ -171,25 +285,22 @@ function generateQuiz() {
         return;
     }
     
-    // Cấu hình chung
     const quizTitle = document.getElementById('quizTitle').value || 'Learn with Ms. Thúy - English Quiz';
     const teacherName = document.getElementById('teacherName').value || 'Ms. Thúy';
     const timeLimit = document.getElementById('timeLimit').value;
     
-    // Build matchingB (cột B) - XÁC RỘN để học sinh không đoán được
+    // Matching: xáo trộn cột B
     const shuffledB = [...matching].sort(() => Math.random() - 0.5);
     const matchingB = shuffledB.map((item, idx) => ({
         key: String.fromCharCode(65 + idx),
         text: item.b
     }));
     
-    // Gán đáp án matching theo key cột B (tìm đúng key của giá trị b trong cột B đã shuffle)
     const matchingData = matching.map((item) => {
         const found = matchingB.find(b => b.text === item.b);
         return { id: item.id, a: item.a, b: item.b, ans: found.key };
     });
     
-    // Tính lại ID cho các phần (nối tiếp)
     let currentId = 1;
     const finalMatching = matchingData.map(m => ({ ...m, id: currentId++ }));
     const finalMcq = mcq.map(m => ({ ...m, id: currentId++ }));
@@ -198,7 +309,6 @@ function generateQuiz() {
     const finalPara = para.map(p => ({ ...p, id: currentId++ }));
     const finalScramble = scramble.map(s => ({ ...s, id: currentId++ }));
     
-    // Đếm số phần có dữ liệu
     const sections = [
         { name: 'matching', count: finalMatching.length, title: 'Matching (Nối từ)' },
         { name: 'mcq', count: finalMcq.length, title: 'Multiple Choice' },
@@ -209,22 +319,15 @@ function generateQuiz() {
         { name: 'listening', count: listening.sentences.length, title: 'Listening' }
     ].filter(s => s.count > 0);
     
-    // Generate HTML
     const html = buildQuizHTML({
         quizTitle, teacherName, timeLimit,
-        matching: finalMatching,
-        matchingB,
-        mcq: finalMcq,
-        fib: finalFib,
-        wordOrder: finalWordOrder,
-        para: finalPara,
-        scramble: finalScramble,
-        listening: listening,
-        sections,
-        totalQuestions
+        matching: finalMatching, matchingB,
+        mcq: finalMcq, fib: finalFib,
+        wordOrder: finalWordOrder, para: finalPara,
+        scramble: finalScramble, listening: listening,
+        sections, totalQuestions
     });
     
-    // Download file
     const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -245,7 +348,6 @@ function generateQuiz() {
 function buildQuizHTML(data) {
     const { quizTitle, teacherName, timeLimit, matching, matchingB, mcq, fib, wordOrder, para, scramble, listening, sections, totalQuestions } = data;
     
-    // Build các section HTML
     let sectionsHTML = '';
     let sectionIndex = 0;
     
@@ -352,6 +454,7 @@ function buildQuizHTML(data) {
         </section>`;
     }
     
+    // === LISTENING MỚI - Đoạn văn dài với ô nhập inline ===
     if (listening.sentences.length > 0) {
         sectionIndex++;
         sectionsHTML += `
@@ -360,7 +463,7 @@ function buildQuizHTML(data) {
                 <h2 class="section-title">Phần ${sectionIndex}: Listening</h2>
                 <div class="section-score">Đúng: <span id="score${sectionIndex}">0</span>/${listening.sentences.length}</div>
             </div>
-            <p style="margin-bottom: 20px; font-weight: 600;">Nghe file audio và điền từ thích hợp vào chỗ trống. <em>Nhấn vào ô trống để nhập từ.</em></p>
+            <p style="margin-bottom: 20px; font-weight: 600;">Nghe file audio và điền từ thích hợp vào chỗ trống trong đoạn văn.</p>
             
             <div class="audio-player-wrapper">
                 <h3>🎧 BÀI NGHE</h3>
@@ -370,7 +473,14 @@ function buildQuizHTML(data) {
                 </audio>
             </div>
             
-            <div id="listening-container"></div>
+            <div class="listening-scroll-controls">
+                <button class="btn-scroll" onclick="scrollListening('top')">↑ Lên đầu</button>
+                <button class="btn-scroll" onclick="scrollListening('bottom')">↓ Xuống cuối</button>
+            </div>
+            
+            <div class="listening-passage-wrapper" id="listening-scroll-area">
+                <div id="listening-passage"></div>
+            </div>
             
             <div class="section-actions">
                 <button class="btn btn-reset" onclick="resetSection(${sectionIndex})">Làm lại</button>
@@ -379,7 +489,6 @@ function buildQuizHTML(data) {
         </section>`;
     }
     
-    // Timer HTML (nếu có thời gian)
     const timerHTML = timeLimit ? `
         <div class="score-item" style="background:#000;color:#fff;padding:5px 12px;border:2px solid #000;">
             ⏱️ <span id="timer">00:00</span>
@@ -460,8 +569,21 @@ select.matching-select { width: 100%; padding: 10px; border: 2px solid #000; fon
 .audio-player-wrapper { background: linear-gradient(135deg, #c4b5fd 0%, #8ec5fc 100%); border: 3px solid #000; box-shadow: 4px 4px 0 #000; padding: 20px; margin-bottom: 25px; text-align: center; }
 .audio-player-wrapper h3 { margin-bottom: 12px; font-size: 1.1rem; color: #000; }
 .audio-player-wrapper audio { width: 100%; max-width: 500px; outline: none; }
-.listening-sentence { font-size: 1.05rem; line-height: 2; }
-.quiz-section.is-locked .question-block { pointer-events: none; opacity: 0.85; cursor: not-allowed; }
+.listening-passage-wrapper { background: #fffef0; border: 3px solid #000; padding: 20px; margin-bottom: 20px; max-height: 400px; overflow-y: auto; font-size: 1.05rem; line-height: 2.2; box-shadow: 3px 3px 0 #000; }
+.listening-passage-wrapper::-webkit-scrollbar { width: 12px; }
+.listening-passage-wrapper::-webkit-scrollbar-track { background: #f0f0f0; border: 1px solid #000; }
+.listening-passage-wrapper::-webkit-scrollbar-thumb { background: var(--color-primary); border: 2px solid #000; }
+.listening-scroll-controls { display: flex; gap: 10px; margin-bottom: 15px; justify-content: flex-end; }
+.btn-scroll { padding: 6px 14px; border: 2px solid #000; background: var(--color-accent); font-weight: 700; cursor: pointer; transition: all 0.2s; font-size: 0.9rem; }
+.btn-scroll:hover { transform: translate(-2px,-2px); box-shadow: 3px 3px 0 #000; }
+.listening-blank-input { display: inline-block; min-width: 100px; padding: 4px 8px; border: 2px solid #000; border-bottom: 3px solid #000; background: #fff; font-family: 'Inter', sans-serif; font-weight: 700; font-size: 1rem; text-align: center; outline: none; margin: 0 4px; transition: all 0.2s; }
+.listening-blank-input:focus { background: var(--color-accent); box-shadow: 2px 2px 0 #000; transform: translate(-1px, -1px); }
+.listening-blank-input.filled { background: #e0e7ff; }
+.listening-blank-input.is-correct { background: var(--color-correct) !important; }
+.listening-blank-input.is-wrong { background: var(--color-wrong) !important; }
+.listening-num-label { font-weight: 700; color: #000; background: var(--color-accent); padding: 2px 6px; border: 1px solid #000; font-size: 0.85rem; margin-left: 2px; }
+.quiz-section.is-locked .question-block,
+.quiz-section.is-locked .listening-passage-wrapper { pointer-events: none; opacity: 0.85; cursor: not-allowed; }
 .quiz-section.is-locked .question-block.is-correct,
 .quiz-section.is-locked .question-block.is-wrong { opacity: 1; }
 @media (max-width: 768px) {
@@ -497,6 +619,7 @@ const fibData = ${JSON.stringify(fib)};
 const wordOrderData = ${JSON.stringify(wordOrder)};
 const paraData = ${JSON.stringify(para)};
 const scrambleData = ${JSON.stringify(scramble)};
+const listeningPassage = ${JSON.stringify(listening.passage)};
 const listeningData = ${JSON.stringify(listening.sentences)};
 const sectionMap = ${JSON.stringify(sections.map((s, i) => ({ name: s.name, sectionNum: i + 1, count: s.count })))};
 
@@ -577,12 +700,46 @@ function renderScramble() {
     }).join('');
 }
 
+// === RENDER LISTENING MỚI - Đoạn văn với input inline ===
 function renderListening() {
-    const container = document.getElementById('listening-container');
-    container.innerHTML = listeningData.map((item, idx) => {
-        const sentenceWithBlank = item.text.replace(/_+/, '<span class="blank listening-blank" data-val=""></span>');
-        return '<div class="question-block" data-id="' + (idx + 1) + '" data-ans="' + item.ans.toLowerCase().trim() + '"><div class="q-text listening-sentence">' + (idx + 1) + '. ' + sentenceWithBlank + '</div></div>';
-    }).join('');
+    const passageDiv = document.getElementById('listening-passage');
+    if (!passageDiv) return;
+    
+    // Thay thế ____ (N) bằng input có thể gõ
+    let html = listeningPassage.replace(/_+\\s*\\((\\d+)\\)/g, (match, num) => {
+        return '<input type="text" class="listening-blank-input" data-num="' + num + '" placeholder="(' + num + ')" autocomplete="off"> <span class="listening-num-label">(' + num + ')</span>';
+    });
+    
+    // Xuống dòng
+    html = html.replace(/\\n/g, '<br>');
+    
+    passageDiv.innerHTML = html;
+    
+    // Thêm sự kiện input để đổi màu khi gõ
+    passageDiv.querySelectorAll('.listening-blank-input').forEach(input => {
+        input.addEventListener('input', (e) => {
+            if (e.target.value.trim()) {
+                e.target.classList.add('filled');
+            } else {
+                e.target.classList.remove('filled');
+            }
+            // Xóa trạng thái chấm điểm cũ
+            const section = e.target.closest('.quiz-section');
+            if (section) section.classList.remove('is-locked');
+            clearStatus(e.target.closest('.question-block') || e.target.closest('.listening-passage-wrapper'));
+        });
+    });
+}
+
+// === SCROLL LISTENING ===
+function scrollListening(direction) {
+    const area = document.getElementById('listening-scroll-area');
+    if (!area) return;
+    if (direction === 'top') {
+        area.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+        area.scrollTo({ top: area.scrollHeight, behavior: 'smooth' });
+    }
 }
 
 // === INTERACTION ===
@@ -595,7 +752,6 @@ function setActiveBlank(el) {
 }
 
 function selectFibWord(chip, word) {
-    // 1. Nếu click vào từ đang bị gạch (đã dùng) -> HỦY CHỌN (Undo)
     if (chip.classList.contains('used')) {
         const blanks = document.querySelectorAll('.blank');
         blanks.forEach(blank => {
@@ -611,7 +767,6 @@ function selectFibWord(chip, word) {
         return;
     }
 
-    // 2. Xác định ô trống đích đến
     let targetBlank = activeFibBlank;
     if (!targetBlank) {
         const blanks = document.querySelectorAll('.blank:not(.filled)');
@@ -622,7 +777,6 @@ function selectFibWord(chip, word) {
         }
     }
 
-    // 3. Nếu ô đích ĐÃ có từ khác, phải trả từ cũ về ngân hàng
     if (targetBlank.dataset.val) {
         const oldWord = targetBlank.dataset.val;
         const bankChips = document.querySelectorAll('#fib-bank .word-chip');
@@ -633,16 +787,12 @@ function selectFibWord(chip, word) {
         });
     }
 
-    // 4. Điền từ mới vào ô
     targetBlank.textContent = word;
     targetBlank.dataset.val = word;
     targetBlank.classList.add('filled');
     targetBlank.classList.remove('active');
-
-    // 5. Đánh dấu từ mới là đã dùng
     chip.classList.add('used');
     activeFibBlank = null;
-    
     clearStatus(chip.closest('.question-block'));
 }
 
@@ -682,74 +832,70 @@ function clearScramble(id) {
     clearStatus(ans.closest('.question-block'));
 }
 
-// Listening: click vào ô trống để nhập từ
-document.addEventListener('click', (e) => {
-    if (e.target.classList.contains('listening-blank')) {
-        const blank = e.target;
-        const section = blank.closest('.quiz-section');
-        if (section && section.classList.contains('is-locked')) return;
-        const currentVal = blank.dataset.val || '';
-        const input = prompt('Nhập từ cần điền:', currentVal);
-        if (input !== null) {
-            blank.textContent = input.trim();
-            blank.dataset.val = input.trim();
-            if (input.trim()) {
-                blank.classList.add('filled');
-            } else {
-                blank.classList.remove('filled');
-            }
-            clearStatus(blank.closest('.question-block'));
-        }
-    }
-});
-
 // === GRADING ===
 function normalizeText(t) { return t.toLowerCase().replace(/[.,\\/#!$%^&*;:{}=\\-_\\\`~()]/g, '').replace(/\\s{2,}/g, ' ').trim(); }
 
 function checkSection(num) {
     let correct = 0;
     const sectionInfo = sectionMap.find(s => s.sectionNum === num);
-    const blocks = document.querySelectorAll('#section' + num + ' .question-block');
-    blocks.forEach(block => {
-        const ans = block.dataset.ans.toLowerCase().trim();
-        let userAns = '', isCorrect = false;
-        if (sectionInfo.name === 'matching') {
-            userAns = block.querySelector('select').value.toLowerCase();
-            isCorrect = userAns === ans;
-        } else if (sectionInfo.name === 'mcq') {
-            const c = block.querySelector('input[type="radio"]:checked');
-            if (c) { userAns = c.value.toLowerCase(); isCorrect = userAns === ans; }
-        } else if (sectionInfo.name === 'fib') {
-            const b = block.querySelector('.blank');
-            userAns = b.dataset.val.toLowerCase().trim();
-            isCorrect = userAns === ans;
-        } else if (sectionInfo.name === 'wordorder') {
-            const area = block.querySelector('.word-order-area');
-            userAns = Array.from(area.querySelectorAll('.word-chip')).map(c => c.textContent).join(' ').toLowerCase();
-            isCorrect = normalizeText(userAns) === normalizeText(ans);
-        } else if (sectionInfo.name === 'para') {
-            userAns = block.querySelector('.para-input').value.toLowerCase();
-            isCorrect = normalizeText(userAns) === normalizeText(ans);
-        } else if (sectionInfo.name === 'scramble') {
-            const area = block.querySelector('#scramble-answer-' + block.dataset.id);
-            userAns = Array.from(area.querySelectorAll('.word-chip')).map(c => c.textContent).join('');
-            isCorrect = userAns === ans.toUpperCase();
-        } else if (sectionInfo.name === 'listening') {
-            const blank = block.querySelector('.listening-blank');
-            if (blank) {
-                userAns = blank.dataset.val.toLowerCase().trim();
-                isCorrect = userAns === ans;
+    const section = document.getElementById('section' + num);
+    
+    if (sectionInfo.name === 'listening') {
+        // === CHECK LISTENING ĐẶC BIỆT ===
+        const inputs = section.querySelectorAll('.listening-blank-input');
+        inputs.forEach(input => {
+            const num = input.dataset.num;
+            const item = listeningData.find(d => d.num === num);
+            if (!item) return;
+            
+            const userAns = input.value.trim().toLowerCase();
+            const correctAns = item.ans.toLowerCase().trim();
+            
+            input.classList.remove('is-correct', 'is-wrong');
+            if (userAns === correctAns) {
+                input.classList.add('is-correct');
+                correct++;
+            } else {
+                input.classList.add('is-wrong');
             }
-        }
-        if (isCorrect) { block.classList.add('is-correct'); block.classList.remove('is-wrong'); correct++; }
-        else { block.classList.add('is-wrong'); block.classList.remove('is-correct'); }
-    });
+        });
+    } else {
+        const blocks = section.querySelectorAll('.question-block');
+        blocks.forEach(block => {
+            const ans = block.dataset.ans.toLowerCase().trim();
+            let userAns = '', isCorrect = false;
+            if (sectionInfo.name === 'matching') {
+                userAns = block.querySelector('select').value.toLowerCase();
+                isCorrect = userAns === ans;
+            } else if (sectionInfo.name === 'mcq') {
+                const c = block.querySelector('input[type="radio"]:checked');
+                if (c) { userAns = c.value.toLowerCase(); isCorrect = userAns === ans; }
+            } else if (sectionInfo.name === 'fib') {
+                const b = block.querySelector('.blank');
+                userAns = b.dataset.val.toLowerCase().trim();
+                isCorrect = userAns === ans;
+            } else if (sectionInfo.name === 'wordorder') {
+                const area = block.querySelector('.word-order-area');
+                userAns = Array.from(area.querySelectorAll('.word-chip')).map(c => c.textContent).join(' ').toLowerCase();
+                isCorrect = normalizeText(userAns) === normalizeText(ans);
+            } else if (sectionInfo.name === 'para') {
+                userAns = block.querySelector('.para-input').value.toLowerCase();
+                isCorrect = normalizeText(userAns) === normalizeText(ans);
+            } else if (sectionInfo.name === 'scramble') {
+                const area = block.querySelector('#scramble-answer-' + block.dataset.id);
+                userAns = Array.from(area.querySelectorAll('.word-chip')).map(c => c.textContent).join('');
+                isCorrect = userAns === ans.toUpperCase();
+            }
+            if (isCorrect) { block.classList.add('is-correct'); block.classList.remove('is-wrong'); correct++; }
+            else { block.classList.add('is-wrong'); block.classList.remove('is-correct'); }
+        });
+    }
+    
     scores[num] = correct;
     document.getElementById('score' + num).textContent = correct;
     updateTotalScore();
     
-    // KHÓA BÀI TẬP SAU KHI KIỂM TRA
-    const section = document.getElementById('section' + num);
+    // KHÓA BÀI TẬP
     section.classList.add('is-locked');
 }
 
@@ -758,31 +904,29 @@ function resetSection(num) {
     document.getElementById('score' + num).textContent = 0;
     const section = document.getElementById('section' + num);
     const sectionInfo = sectionMap.find(s => s.sectionNum === num);
-    section.querySelectorAll('.question-block').forEach(block => {
-        block.classList.remove('is-correct', 'is-wrong');
-        if (sectionInfo.name === 'matching') block.querySelector('select').value = '';
-        else if (sectionInfo.name === 'mcq') block.querySelectorAll('input[type="radio"]').forEach(r => r.checked = false);
-        else if (sectionInfo.name === 'fib') {
-            const b = block.querySelector('.blank');
-            b.textContent = ''; b.dataset.val = ''; b.classList.remove('filled', 'active');
-        }
-        else if (sectionInfo.name === 'wordorder') clearWord(block.dataset.id);
-        else if (sectionInfo.name === 'para') block.querySelector('.para-input').value = '';
-        else if (sectionInfo.name === 'scramble') clearScramble(block.dataset.id);
-        else if (sectionInfo.name === 'listening') {
-            const blank = block.querySelector('.listening-blank');
-            if (blank) {
-                blank.textContent = '';
-                blank.dataset.val = '';
-                blank.classList.remove('filled', 'active');
+    
+    if (sectionInfo.name === 'listening') {
+        section.querySelectorAll('.listening-blank-input').forEach(input => {
+            input.value = '';
+            input.classList.remove('filled', 'is-correct', 'is-wrong');
+        });
+    } else {
+        section.querySelectorAll('.question-block').forEach(block => {
+            block.classList.remove('is-correct', 'is-wrong');
+            if (sectionInfo.name === 'matching') block.querySelector('select').value = '';
+            else if (sectionInfo.name === 'mcq') block.querySelectorAll('input[type="radio"]').forEach(r => r.checked = false);
+            else if (sectionInfo.name === 'fib') {
+                const b = block.querySelector('.blank');
+                b.textContent = ''; b.dataset.val = ''; b.classList.remove('filled', 'active');
             }
-        }
-    });
-    if (sectionInfo.name === 'fib') document.querySelectorAll('#fib-bank .word-chip').forEach(c => c.classList.remove('used'));
+            else if (sectionInfo.name === 'wordorder') clearWord(block.dataset.id);
+            else if (sectionInfo.name === 'para') block.querySelector('.para-input').value = '';
+            else if (sectionInfo.name === 'scramble') clearScramble(block.dataset.id);
+        });
+        if (sectionInfo.name === 'fib') document.querySelectorAll('#fib-bank .word-chip').forEach(c => c.classList.remove('used'));
+    }
     
-    // MỞ KHÓA LẠI
     section.classList.remove('is-locked');
-    
     updateTotalScore();
 }
 
@@ -809,14 +953,20 @@ function startTimer(minutes) {
         seconds--;
     }, 1000);
 }` : ''}
+<\/script>
+</body>
+</html>`;
+}
+
 // ============================================================
-// QUICK EXAMPLES FUNCTIONALITY
+// QUICK EXAMPLES (giữ nguyên cho từng tab riêng lẻ)
 // ============================================================
 
 function toggleExamples() {
     const content = document.getElementById('examples-content');
     const icon = document.getElementById('toggle-icon');
     const btn = document.querySelector('.btn-toggle-examples');
+    if (!content) return;
     
     if (content.classList.contains('collapsed')) {
         content.classList.remove('collapsed');
@@ -831,85 +981,24 @@ function toggleExamples() {
 
 function addQuickExample(type) {
     const examples = {
-        matching: `More and more | Increasingly
-Use | Employ
-Advertisements | Promotional campaigns
-Convince | Persuade
-Products | Goods and services`,
-        
-        mcq: `What is the capital of France?
-A. London
-B. Paris
-C. Berlin
-D. Madrid
-Answer: B
-
-Which planet is known as the Red Planet?
-A. Venus
-B. Jupiter
-C. Mars
-D. Saturn
-Answer: C
-
-What is 2 + 2?
-A. 3
-B. 4
-C. 5
-D. 6
-Answer: B`,
-        
-        fib: `The capital of France is ______________. | Paris
-She usually goes to ______________ by bus. | school
-I have two ______________ and one sister. | brothers
-We need to buy some ______________ for dinner. | vegetables
-My favorite ______________ is Mathematics. | subject`,
-        
-        wordorder: `is / capital / Paris / France / the / of / . | The capital of France is Paris.
-go / I / school / to / daily / . | I go to school daily.
-like / She / to / read / books / . | She likes to read books.
-playing / They / are / football / . | They are playing football.
-have / We / meeting / a / tomorrow / . | We have a meeting tomorrow.`,
-        
-        para: `She is very beautiful. (extremely) | She is extremely beautiful.
-He runs fast. (quickly) | He runs quickly.
-The movie was interesting. (quite) | The movie was quite interesting.
-They arrived early. (on time) | They arrived on time.
-The food tastes good. (delicious) | The food tastes delicious.`,
-        
-        scramble: `SCHOOL | Trường học
-TEACHER | Giáo viên
-STUDENT | Học sinh
-BOOK | Sách
-COMPUTER | Máy tính`,
-        
-        listening: `Audio: https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3
-The capital of France is ______________. | Paris
-She usually goes to ______________ by bus. | school
-I have two ______________ and one sister. | brothers
-We need to buy some ______________ for dinner. | vegetables`
+        matching: `More and more | Increasingly\nUse | Employ\nAdvertisements | Promotional campaigns`,
+        mcq: `What is the capital of France?\nA. London\nB. Paris\nC. Berlin\nD. Madrid\nAnswer: B`,
+        fib: `The capital of France is ______________. | Paris\nShe goes to ______________ by bus. | school`,
+        wordorder: `is / capital / Paris / . | The capital is Paris.`,
+        para: `She is beautiful. (extremely) | She is extremely beautiful.`,
+        scramble: `SCHOOL | Trường học\nTEACHER | Giáo viên`,
+        listening: `Audio: https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3\nToday, I ____ (1) to the market. My friend ____ (2) with me.\n---\n1 | went\n2 | came`
     };
     
     const textarea = document.getElementById('input-' + type);
     if (textarea) {
         textarea.value = examples[type];
-        
-        // Chuyển sang tab tương ứng
-        const tabBtn = document.querySelector(`.tab-btn[data-tab="${type}"]`);
-        if (tabBtn) {
-            tabBtn.click();
-        }
-        
-        // Hiển thị thông báo
+        const tabBtn = document.querySelector('.tab-btn[data-tab="' + type + '"]');
+        if (tabBtn) tabBtn.click();
         const statusEl = document.getElementById('status-' + type);
         if (statusEl) {
-            statusEl.textContent = '✅ Đã thêm 3 ví dụ mẫu!';
-            setTimeout(() => {
-                statusEl.textContent = '';
-            }, 3000);
+            statusEl.textContent = '✅ Đã thêm ví dụ mẫu!';
+            setTimeout(() => { statusEl.textContent = ''; }, 3000);
         }
     }
-}
-<\/script>
-</body>
-</html>`;
 }
