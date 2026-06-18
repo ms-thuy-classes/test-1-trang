@@ -123,6 +123,29 @@ function parseScramble(text) {
     });
     return result;
 }
+function parseListening(text) {
+    if (!text.trim()) return { audioUrl: '', sentences: [] };
+    const lines = text.trim().split('\n').map(l => l.trim()).filter(l => l);
+    
+    let audioUrl = '';
+    const sentences = [];
+    
+    lines.forEach(line => {
+        // Dòng chứa link audio
+        if (line.toLowerCase().startsWith('audio:')) {
+            audioUrl = line.substring(6).trim();
+        } 
+        // Dòng chứa câu hỏi (có dấu |)
+        else if (line.includes('|')) {
+            const [sentence, ans] = line.split('|').map(s => s.trim());
+            if (sentence && ans) {
+                sentences.push({ text: sentence, ans });
+            }
+        }
+    });
+    
+    return { audioUrl, sentences };
+}
 
 // ============================================================
 // GENERATE QUIZ HTML
@@ -138,9 +161,12 @@ function generateQuiz() {
     const wordOrder = parseWordOrder(document.getElementById('input-wordorder').value);
     const para = parsePara(document.getElementById('input-para').value);
     const scramble = parseScramble(document.getElementById('input-scramble').value);
+    const listening = parseListening(document.getElementById('input-listening').value);
     
     // Kiểm tra có ít nhất 1 dạng bài
-    const totalQuestions = matching.length + mcq.length + fib.length + wordOrder.length + para.length + scramble.length;
+    const totalQuestions = matching.length + mcq.length + fib.length + 
+                      wordOrder.length + para.length + scramble.length + 
+                      listening.sentences.length;
     
     if (totalQuestions === 0) {
         statusEl.innerHTML = '<span class="status-error">❌ Vui lòng nhập ít nhất 1 câu hỏi!</span>';
@@ -181,7 +207,8 @@ const matchingData = matching.map((item) => {
         { name: 'fib', count: finalFib.length, title: 'Fill in the Blanks' },
         { name: 'wordorder', count: finalWordOrder.length, title: 'Word Order' },
         { name: 'para', count: finalPara.length, title: 'Paraphrasing' },
-        { name: 'scramble', count: finalScramble.length, title: 'Scramble Words' }
+        { name: 'scramble', count: finalScramble.length, title: 'Scramble Words' },
+        { name: 'listening', count: listening.sentences.length, title: 'Listening' }  
     ].filter(s => s.count > 0);
     
     // Generate HTML
@@ -194,6 +221,7 @@ const matchingData = matching.map((item) => {
         wordOrder: finalWordOrder,
         para: finalPara,
         scramble: finalScramble,
+         listening: listening,
         sections,
         totalQuestions
     });
@@ -217,7 +245,7 @@ const matchingData = matching.map((item) => {
 // ============================================================
 
 function buildQuizHTML(data) {
-    const { quizTitle, teacherName, timeLimit, matching, matchingB, mcq, fib, wordOrder, para, scramble, sections, totalQuestions } = data;
+    const { quizTitle, teacherName, timeLimit, matching, matchingB, mcq, fib, wordOrder, para, scramble, listening, sections, totalQuestions } = data;
     
     // Build các section HTML
     let sectionsHTML = '';
@@ -325,6 +353,32 @@ function buildQuizHTML(data) {
             </div>
         </section>`;
     }
+    if (listening.sentences.length > 0) {
+    sectionIndex++;
+    sectionsHTML += `
+    <section class="quiz-section" id="section${sectionIndex}">
+        <div class="section-header">
+            <h2 class="section-title">Phần ${sectionIndex}: Listening</h2>
+            <div class="section-score">Đúng: <span id="score${sectionIndex}">0</span>/${listening.sentences.length}</div>
+        </div>
+        <p style="margin-bottom: 20px; font-weight: 600;">Nghe file audio và điền từ thích hợp vào chỗ trống.</p>
+        
+        <div class="audio-player-wrapper">
+            <h3>🎧 BÀI NGHE</h3>
+            <audio controls id="listening-audio">
+                <source src="${listening.audioUrl}" type="audio/mpeg">
+                Trình duyệt của bạn không hỗ trợ phát audio.
+            </audio>
+        </div>
+        
+        <div id="listening-container"></div>
+        
+        <div class="section-actions">
+            <button class="btn btn-reset" onclick="resetSection(${sectionIndex})">Làm lại</button>
+            <button class="btn btn-check" onclick="checkSection(${sectionIndex})">Kiểm tra</button>
+        </div>
+    </section>`;
+}
     
     // Timer HTML (nếu có thời gian)
  // Timer HTML (nếu có thời gian)
@@ -438,6 +492,7 @@ const fibData = ${JSON.stringify(fib)};
 const wordOrderData = ${JSON.stringify(wordOrder)};
 const paraData = ${JSON.stringify(para)};
 const scrambleData = ${JSON.stringify(scramble)};
+const listeningData = ${JSON.stringify(listening.sentences)};
 const sectionMap = ${JSON.stringify(sections.map((s, i) => ({ name: s.name, sectionNum: i + 1, count: s.count })))};
 
 // === STATE ===
@@ -454,6 +509,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (s.name === 'wordorder') renderWordOrder();
         if (s.name === 'para') renderParaphrasing();
         if (s.name === 'scramble') renderScramble();
+        if (s.name === 'listening') renderListening();  
     });
     updateTotalScore();
     ${timeLimit ? `startTimer(${timeLimit});` : ''}
@@ -515,7 +571,30 @@ function renderScramble() {
         return '<div class="question-block" data-id="' + item.id + '" data-ans="' + item.word + '"><div class="q-text">' + item.id + '. ' + item.hint + '</div><div class="word-order-controls"><button class="btn btn-undo" onclick="undoScramble(' + item.id + ')">↩ Undo</button><button class="btn btn-clear" onclick="clearScramble(' + item.id + ')">✕ Xóa hết</button></div><div class="word-order-area" id="scramble-answer-' + item.id + '" style="min-height:50px;justify-content:center;font-size:1.2rem;letter-spacing:2px;"></div><div class="word-bank" id="scramble-bank-' + item.id + '" style="justify-content:center;">' + chars.map(c => '<div class="word-chip" onclick="moveScrambleChar(this, \\'scramble-bank-' + item.id + '\\', \\'scramble-answer-' + item.id + '\\')">' + c + '</div>').join('') + '</div></div>';
     }).join('');
 }
+function renderListening() {
+    const container = document.getElementById('listening-container');
 
+    container.innerHTML = listeningData.map((item, index) => {
+        const sentence = item.text.replace(
+            /_+/,
+            `<span class="listening-blank blank" data-val=""></span>`
+        );
+
+        return `
+        <div class="question-block"
+             data-id="${index + 1}"
+             data-ans="${item.ans.toLowerCase().trim()}">
+            <div class="q-text">
+                ${index + 1}. ${sentence}
+            </div>
+        </div>`;
+    }).join('');
+}
+function setActiveListeningBlank(el) {
+    document.querySelectorAll('.listening-blank').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+    window.activeListeningBlank = el;
+}
 // === INTERACTION ===
 function clearStatus(block) { block.classList.remove('is-correct', 'is-wrong'); }
 function setActiveBlank(el) {
@@ -638,6 +717,13 @@ function checkSection(num) {
             userAns = Array.from(area.querySelectorAll('.word-chip')).map(c => c.textContent).join('');
             isCorrect = userAns === ans.toUpperCase();
         }
+        else if (sectionInfo.name === 'listening') {
+    const blank = block.querySelector('.listening-blank');
+    if (blank) {
+        userAns = blank.dataset.val.toLowerCase().trim();
+        isCorrect = userAns === ans;
+    }
+}
         if (isCorrect) { block.classList.add('is-correct'); block.classList.remove('is-wrong'); correct++; }
         else { block.classList.add('is-wrong'); block.classList.remove('is-correct'); }
     });
@@ -662,6 +748,15 @@ function resetSection(num) {
         else if (sectionInfo.name === 'wordorder') clearWord(block.dataset.id);
         else if (sectionInfo.name === 'para') block.querySelector('.para-input').value = '';
         else if (sectionInfo.name === 'scramble') clearScramble(block.dataset.id);
+        else if (sectionInfo.name === 'listening') {
+    const blank = block.querySelector('.listening-blank');
+    if (blank) {
+        blank.textContent = '';
+        blank.dataset.val = '';
+        blank.classList.remove('filled', 'active');
+    }
+}
+        
     });
     if (sectionInfo.name === 'fib') document.querySelectorAll('#fib-bank .word-chip').forEach(c => c.classList.remove('used'));
     updateTotalScore();
@@ -690,6 +785,24 @@ function startTimer(minutes) {
         seconds--;
     }, 1000);
 }` : ''}
+// Cho phép gõ trực tiếp vào ô trống của phần Listening
+document.addEventListener('click', (e) => {
+    if (e.target.classList.contains('listening-blank')) {
+        const blank = e.target;
+        const currentVal = blank.dataset.val || '';
+        const input = prompt('Nhập từ cần điền:', currentVal);
+        if (input !== null) {
+            blank.textContent = input.trim();
+            blank.dataset.val = input.trim();
+            if (input.trim()) {
+                blank.classList.add('filled');
+            } else {
+                blank.classList.remove('filled');
+            }
+            clearStatus(blank.closest('.question-block'));
+        }
+    }
+});
 <\/script>
 </body>
 </html>`;
