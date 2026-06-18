@@ -33,8 +33,123 @@
                 </div>
             </div>
         </section>
-
+<!-- BẢNG COPY-PASTE NHANH -->
+<section class="quick-examples-section">
+    <div class="quick-examples-header">
+        <h2>⚡ BẢNG COPY-PASTE NHANH</h2>
+        <button class="btn-toggle-examples" onclick="toggleExamples()">
+            <span id="toggle-icon">▼</span> Thu hẹp
+        </button>
+    </div>
+    
+    <div class="examples-content" id="examples-content">
+        <p style="margin-bottom: 15px; font-weight: 600; color: #555;">
+            💡 Nhấn nút <strong>"Thêm nhanh"</strong> để tự động điền 3 ví dụ mẫu vào ô nhập liệu tương ứng.
+        </p>
+        
+        <div class="examples-grid">
+            
+            <!-- MATCHING -->
+            <div class="example-card">
+                <h4>🔗 Matching (Nối từ)</h4>
+                <div class="example-preview">
+                    <code>More and more | Increasingly</code><br>
+                    <code>Use | Employ</code><br>
+                    <code>Advertisements | Promotional campaigns</code>
+                </div>
+                <button class="btn-add-quick" onclick="addQuickExample('matching')">
+                    ⚡ Thêm nhanh
+                </button>
+            </div>
+            
+            <!-- MCQ -->
+            <div class="example-card">
+                <h4>📝 Trắc nghiệm</h4>
+                <div class="example-preview">
+                    <code>Question 1?</code><br>
+                    <code>A. option1</code><br>
+                    <code>B. option2</code><br>
+                    <code>C. option3</code><br>
+                    <code>D. option4</code><br>
+                    <code>Answer: B</code>
+                </div>
+                <button class="btn-add-quick" onclick="addQuickExample('mcq')">
+                    ⚡ Thêm nhanh
+                </button>
+            </div>
+            
+            <!-- FILL-IN -->
+            <div class="example-card">
+                <h4>✍️ Fill-in</h4>
+                <div class="example-preview">
+                    <code>Sentence with ___ | answer1</code><br>
+                    <code>Another ___ sentence | answer2</code><br>
+                    <code>Third ___ example | answer3</code>
+                </div>
+                <button class="btn-add-quick" onclick="addQuickExample('fib')">
+                    ⚡ Thêm nhanh
+                </button>
+            </div>
+            
+            <!-- WORD ORDER -->
+            <div class="example-card">
+                <h4>🔀 Sắp xếp câu</h4>
+                <div class="example-preview">
+                    <code>word1 / word2 / word3 / word4 | Full sentence.</code><br>
+                    <code>is / capital / Paris / France / the / of | The capital of France is Paris.</code><br>
+                    <code>go / I / school / to / daily | I go to school daily.</code>
+                </div>
+                <button class="btn-add-quick" onclick="addQuickExample('wordorder')">
+                    ⚡ Thêm nhanh
+                </button>
+            </div>
+            
+            <!-- PARAPHRASING -->
+            <div class="example-card">
+                <h4>🔄 Viết lại câu</h4>
+                <div class="example-preview">
+                    <code>Original sentence. (hint) | Rewritten sentence.</code><br>
+                    <code>She is very beautiful. (extremely) | She is extremely beautiful.</code><br>
+                    <code>He runs fast. (quickly) | He runs quickly.</code>
+                </div>
+                <button class="btn-add-quick" onclick="addQuickExample('para')">
+                    ⚡ Thêm nhanh
+                </button>
+            </div>
+            
+            <!-- SCRAMBLE -->
+            <div class="example-card">
+                <h4>🎲 Scramble</h4>
+                <div class="example-preview">
+                    <code>WORD | Hint in Vietnamese</code><br>
+                    <code>SCHOOL | Trường học</code><br>
+                    <code>TEACHER | Giáo viên</code><br>
+                    <code>STUDENT | Học sinh</code>
+                </div>
+                <button class="btn-add-quick" onclick="addQuickExample('scramble')">
+                    ⚡ Thêm nhanh
+                </button>
+            </div>
+            
+            <!-- LISTENING -->
+            <div class="example-card">
+                <h4>🎧 Listening</h4>
+                <div class="example-preview">
+                    <code>Audio: https://example.com/audio.mp3</code><br>
+                    <code>Sentence with ___ | answer</code><br>
+                    <code>Another ___ sentence | answer2</code><br>
+                    <code>Third ___ example | answer3</code>
+                </div>
+                <button class="btn-add-quick" onclick="addQuickExample('listening')">
+                    ⚡ Thêm nhanh
+                </button>
+            </div>
+            
+        </div>
+    </div>
+</section>
         <!-- TABS CHỌN DẠNG BÀI -->
+        
         <nav class="tabs-nav">
             <button class="tab-btn active" data-tab="matching">🔗 Matching</button>
             <button class="tab-btn" data-tab="mcq">📝 Trắc nghiệm</button>
